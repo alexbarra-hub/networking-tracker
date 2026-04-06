@@ -1,65 +1,80 @@
-import Image from "next/image";
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+import ContactTable from '@/components/ContactTable'
+import ContactModal from '@/components/ContactModal'
+import { Contact } from '@/types/contact'
 
 export default function Home() {
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [loading, setLoading] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingContact, setEditingContact] = useState<Contact | null>(null)
+
+  const fetchContacts = useCallback(async () => {
+    const res = await fetch('/api/contacts')
+    if (res.ok) setContacts(await res.json())
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { fetchContacts() }, [fetchContacts])
+
+  const openAdd = () => { setEditingContact(null); setModalOpen(true) }
+  const openEdit = (c: Contact) => { setEditingContact(c); setModalOpen(true) }
+  const closeModal = () => setModalOpen(false)
+
+  const handleSave = (saved: Contact) => {
+    setContacts((prev) => {
+      const exists = prev.find((c) => c.id === saved.id)
+      return exists
+        ? prev.map((c) => (c.id === saved.id ? saved : c))
+        : [saved, ...prev]
+    })
+    setModalOpen(false)
+  }
+
+  const handleDelete = async (id: string) => {
+    const res = await fetch(`/api/contacts/${id}`, { method: 'DELETE' })
+    if (res.ok) setContacts((prev) => prev.filter((c) => c.id !== id))
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 py-10">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Networking Tracker</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {contacts.length} {contacts.length === 1 ? 'contact' : 'contacts'}
+            </p>
+          </div>
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Contact
+          </button>
+        </div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="text-center py-20 text-gray-400 text-sm">Loading…</div>
+        ) : (
+          <ContactTable contacts={contacts} onEdit={openEdit} onDelete={handleDelete} />
+        )}
+      </div>
+
+      {modalOpen && (
+        <ContactModal
+          contact={editingContact}
+          onClose={closeModal}
+          onSave={handleSave}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+      )}
+    </main>
+  )
 }
