@@ -4,6 +4,9 @@ import { ContactFormData } from '@/types/contact'
 
 export async function GET() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { data, error } = await supabase
     .from('contacts')
     .select('*')
@@ -15,8 +18,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const supabase = await createClient()
-  const body: ContactFormData = await request.json()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const body: ContactFormData = await request.json()
   if (!body.name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
@@ -30,6 +35,7 @@ export async function POST(request: Request) {
       where_met: body.where_met || null,
       notes: body.notes || null,
       priority: body.priority ?? 'medium',
+      user_id: user.id,
     })
     .select()
     .single()

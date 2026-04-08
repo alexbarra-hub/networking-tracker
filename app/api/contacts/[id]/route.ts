@@ -8,8 +8,10 @@ export async function PUT(
 ) {
   const { id } = await params
   const supabase = await createClient()
-  const body: ContactFormData = await request.json()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const body: ContactFormData = await request.json()
   if (!body.name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
@@ -25,6 +27,7 @@ export async function PUT(
       priority: body.priority ?? 'medium',
     })
     .eq('id', id)
+    .eq('user_id', user.id)
     .select()
     .single()
 
@@ -38,8 +41,14 @@ export async function DELETE(
 ) {
   const { id } = await params
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { error } = await supabase.from('contacts').delete().eq('id', id)
+  const { error } = await supabase
+    .from('contacts')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return new NextResponse(null, { status: 204 })
