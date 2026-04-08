@@ -3,6 +3,12 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertCircleIcon, MailIcon } from 'lucide-react'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -31,80 +37,89 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="w-full max-w-sm text-center">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
-          <div className="text-4xl mb-4">📬</div>
-          <h2 className="text-lg font-semibold text-gray-900">Check your email</h2>
-          <p className="text-sm text-gray-500 mt-2">
-            We sent a confirmation link to <span className="font-medium text-gray-700">{email}</span>.
-            Click it to activate your account.
-          </p>
-          <Link href="/login" className="block mt-6 text-sm text-blue-600 hover:underline">
-            Back to sign in
-          </Link>
-        </div>
+      <div className="w-full max-w-sm">
+        <Card>
+          <CardHeader>
+            <div className="bg-muted mx-auto mb-2 flex size-10 items-center justify-center rounded-full">
+              <MailIcon className="text-muted-foreground size-5" />
+            </div>
+            <CardTitle className="text-center">Check your email</CardTitle>
+            <CardDescription className="text-center">
+              We sent a confirmation link to{' '}
+              <span className="text-foreground font-medium">{email}</span>
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Link href="/login" className="text-muted-foreground hover:text-foreground mx-auto text-sm transition-colors">
+              Back to sign in
+            </Link>
+          </CardFooter>
+        </Card>
       </div>
     )
   }
 
   return (
     <div className="w-full max-w-sm">
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Create an account</h1>
-        <p className="text-sm text-gray-500 mt-1">Start tracking your network</p>
+      <div className="mb-6 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">Networking Tracker</h1>
+        <p className="text-muted-foreground mt-1 text-sm">Create your account</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="you@example.com"
-          />
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Get started</CardTitle>
+          <CardDescription>Start tracking your professional network</CardDescription>
+        </CardHeader>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Min. 6 characters"
-          />
-        </div>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircleIcon />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
-        )}
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+            </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-2 px-4 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Creating account…' : 'Create account'}
-        </button>
-      </form>
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Min. 6 characters"
+              />
+            </div>
+          </CardContent>
 
-      <p className="text-center text-sm text-gray-500 mt-4">
-        Already have an account?{' '}
-        <Link href="/login" className="text-blue-600 hover:underline font-medium">
-          Sign in
-        </Link>
-      </p>
+          <CardFooter className="flex-col gap-3">
+            <Button type="submit" disabled={loading} className="w-full" size="lg">
+              {loading ? 'Creating account…' : 'Create account'}
+            </Button>
+            <p className="text-muted-foreground text-xs">
+              Already have an account?{' '}
+              <Link href="/login" className="text-foreground font-medium hover:underline">
+                Sign in
+              </Link>
+            </p>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   )
 }
