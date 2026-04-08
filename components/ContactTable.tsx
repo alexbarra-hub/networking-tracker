@@ -2,16 +2,27 @@
 
 import { useState } from 'react'
 import { Contact, Priority } from '@/types/contact'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { PencilIcon, Trash2Icon, ArrowUpDownIcon, ArrowUpIcon, ArrowDownIcon } from 'lucide-react'
 
 type SortKey = keyof Pick<Contact, 'name' | 'company' | 'role' | 'where_met' | 'priority' | 'created_at'>
 type SortDir = 'asc' | 'desc'
 
 const PRIORITY_ORDER: Record<Priority, number> = { high: 0, medium: 1, low: 2 }
 
-const priorityBadge: Record<Priority, string> = {
-  high: 'bg-red-100 text-red-700',
-  medium: 'bg-yellow-100 text-yellow-700',
-  low: 'bg-green-100 text-green-700',
+const priorityVariant: Record<Priority, 'destructive' | 'default' | 'secondary'> = {
+  high: 'destructive',
+  medium: 'default',
+  low: 'secondary',
 }
 
 interface Props {
@@ -51,86 +62,94 @@ export default function ContactTable({ contacts, onEdit, onDelete }: Props) {
   })
 
   const SortIcon = ({ col }: { col: SortKey }) => {
-    if (sortKey !== col) return <span className="text-gray-300 ml-1">↕</span>
-    return <span className="ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>
+    if (sortKey !== col) return <ArrowUpDownIcon className="ml-1 inline size-3 opacity-40" />
+    return sortDir === 'asc'
+      ? <ArrowUpIcon className="ml-1 inline size-3" />
+      : <ArrowDownIcon className="ml-1 inline size-3" />
   }
 
   const th = (label: string, key: SortKey) => (
-    <th
+    <TableHead
       onClick={() => handleSort(key)}
-      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide cursor-pointer select-none hover:text-gray-700 whitespace-nowrap"
+      className="cursor-pointer select-none whitespace-nowrap hover:text-foreground"
     >
       {label}<SortIcon col={key} />
-    </th>
+    </TableHead>
   )
 
   if (contacts.length === 0) {
     return (
-      <div className="text-center py-20 text-gray-400">
-        <p className="text-4xl mb-3">👥</p>
-        <p className="text-sm">No contacts yet. Add your first one!</p>
+      <div className="text-muted-foreground flex flex-col items-center justify-center py-24 text-sm">
+        <div className="bg-muted mb-4 flex size-12 items-center justify-center rounded-full text-xl">👥</div>
+        <p className="font-medium">No contacts yet</p>
+        <p className="mt-1 text-xs">Add your first contact to get started.</p>
       </div>
     )
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200">
-      <table className="min-w-full divide-y divide-gray-100">
-        <thead className="bg-gray-50">
-          <tr>
+    <div className="rounded-xl border">
+      <Table>
+        <TableHeader>
+          <TableRow>
             {th('Name', 'name')}
             {th('Company', 'company')}
             {th('Role', 'role')}
             {th('Where Met', 'where_met')}
             {th('Priority', 'priority')}
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100 bg-white">
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {sorted.map((c) => (
-            <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-4 py-3">
-                <span className="font-medium text-gray-900 text-sm">{c.name}</span>
+            <TableRow key={c.id}>
+              <TableCell>
+                <span className="font-medium">{c.name}</span>
                 {c.notes && (
-                  <p className="text-xs text-gray-400 truncate max-w-[200px] mt-0.5">{c.notes}</p>
+                  <p className="text-muted-foreground mt-0.5 max-w-[200px] truncate text-xs">{c.notes}</p>
                 )}
-              </td>
-              <td className="px-4 py-3 text-sm text-gray-600">{c.company ?? <span className="text-gray-300">—</span>}</td>
-              <td className="px-4 py-3 text-sm text-gray-600">{c.role ?? <span className="text-gray-300">—</span>}</td>
-              <td className="px-4 py-3 text-sm text-gray-600">{c.where_met ?? <span className="text-gray-300">—</span>}</td>
-              <td className="px-4 py-3">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${priorityBadge[c.priority]}`}>
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {c.company ?? <span className="opacity-30">—</span>}
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {c.role ?? <span className="opacity-30">—</span>}
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {c.where_met ?? <span className="opacity-30">—</span>}
+              </TableCell>
+              <TableCell>
+                <Badge variant={priorityVariant[c.priority]} className="capitalize">
                   {c.priority}
-                </span>
-              </td>
-              <td className="px-4 py-3 text-right">
-                <div className="flex items-center justify-end gap-2">
-                  <button
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => onEdit(c)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                     title="Edit"
                   >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm(`Delete ${c.name}?`)) onDelete(c.id)
-                    }}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                    <PencilIcon />
+                    <span className="sr-only">Edit</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => { if (confirm(`Delete ${c.name}?`)) onDelete(c.id) }}
                     title="Delete"
+                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                   >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                    <Trash2Icon />
+                    <span className="sr-only">Delete</span>
+                  </Button>
                 </div>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

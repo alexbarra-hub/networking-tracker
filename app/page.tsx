@@ -1,15 +1,26 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import ContactTable from '@/components/ContactTable'
 import ContactModal from '@/components/ContactModal'
 import { Contact } from '@/types/contact'
+import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { PlusIcon, LogOutIcon } from 'lucide-react'
 
 export default function Home() {
+  const router = useRouter()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   const fetchContacts = useCallback(async () => {
     const res = await fetch('/api/contacts')
@@ -39,30 +50,29 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-10">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+    <main className="bg-background min-h-screen">
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Networking Tracker</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h1 className="text-xl font-semibold tracking-tight">Networking Tracker</h1>
+            <p className="text-muted-foreground mt-0.5 text-sm">
               {contacts.length} {contacts.length === 1 ? 'contact' : 'contacts'}
             </p>
           </div>
-          <button
-            onClick={openAdd}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add Contact
-          </button>
+          <div className="flex items-center gap-2">
+            <Button onClick={openAdd} size="sm">
+              <PlusIcon />
+              Add Contact
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
+              <LogOutIcon />
+              Sign out
+            </Button>
+          </div>
         </div>
 
-        {/* Content */}
         {loading ? (
-          <div className="text-center py-20 text-gray-400 text-sm">Loading…</div>
+          <div className="text-muted-foreground py-24 text-center text-sm">Loading…</div>
         ) : (
           <ContactTable contacts={contacts} onEdit={openEdit} onDelete={handleDelete} />
         )}

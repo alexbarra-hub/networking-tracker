@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server'
-import { getSupabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import { ContactFormData } from '@/types/contact'
 
 export async function GET() {
-  const { data, error } = await getSupabase()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data, error } = await supabase
     .from('contacts')
     .select('*')
     .order('created_at', { ascending: false })
@@ -13,13 +17,16 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body: ContactFormData = await request.json()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const body: ContactFormData = await request.json()
   if (!body.name?.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
 
-  const { data, error } = await getSupabase()
+  const { data, error } = await supabase
     .from('contacts')
     .insert({
       name: body.name.trim(),
@@ -28,6 +35,7 @@ export async function POST(request: Request) {
       where_met: body.where_met || null,
       notes: body.notes || null,
       priority: body.priority ?? 'medium',
+      user_id: user.id,
     })
     .select()
     .single()
